@@ -42,6 +42,18 @@ namespace YASDown
             }
         }
 
+        public void SetStatus(string txt)
+        {
+            if (this.InvokeRequired)
+            {
+                this.BeginInvoke((MethodInvoker)delegate { statusLabel.Text = txt; });
+            }
+            else
+            {
+                statusLabel.Text = txt;
+            }
+        }
+
         void Session_OnLoggedOut(IntPtr obj)
         {
             Dispose();

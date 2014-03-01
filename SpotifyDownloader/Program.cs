@@ -154,6 +154,8 @@ namespace YASDown
             Session.Pause();
             Session.UnloadPlayer();
             Log.Debug("Tags written! Finished!");
+            if (frm != null)
+                frm.SetStatus("Download finished");
             new SftpUploader(_confo).go(outFile.FullName);
         }
 
@@ -208,6 +210,8 @@ namespace YASDown
                 Session.Pause();
                 Session.UnloadPlayer();
                 Log.Debug("Tags written! Finished!");
+                if (frm != null)
+                    frm.SetStatus("Download finished");
                 new SftpUploader(_confo).go(outFile.FullName);
                 return;
             }
@@ -279,6 +283,9 @@ namespace YASDown
 
         public static void Download(string url, AppConfig config)
         {
+            _confo = config;
+            if (frm != null)
+                frm.SetStatus("Download in progress...");
             if (url != null && url.Length > 0)
             {
                 IntPtr sess = Session.GetSessionPtr();
@@ -301,13 +308,19 @@ namespace YASDown
                         string _song = Utils.Utf8ToString(libspotify.sp_track_name(sptrack2));
                         Log.Debug("Artist: " + _artist + "; Album: " + _album + "; Song: " + _song);
                         outFile = new FileInfo(Path.Combine(config.localBaseFolder, _artist, _album, _artist + " - " + _song + ".mp3"));
-                        Log.Debug("Making directory " + Path.GetDirectoryName(outFile.FullName));
-                        Directory.CreateDirectory(Path.GetDirectoryName(outFile.FullName));
-                        Session.Play();
-                        Log.Debug("Data is streaming!");
-                        if (outFile.Exists)
-                            outFile.Delete();
-                        _confo = config;
+                        if(outFile.Exists)
+                        {
+                            new SftpUploader(_confo).go(outFile.FullName);
+                        }
+                        else
+                        {
+                            Log.Debug("Making directory " + Path.GetDirectoryName(outFile.FullName));
+                            Directory.CreateDirectory(Path.GetDirectoryName(outFile.FullName));
+                            Session.Play();
+                            Log.Debug("Data is streaming!");
+                            //if (outFile.Exists)
+                            //    outFile.Delete();
+                        }
                     }
                 }
                 else

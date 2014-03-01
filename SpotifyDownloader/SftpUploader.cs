@@ -1,4 +1,5 @@
 ﻿using Renci.SshNet;
+using Renci.SshNet.Common;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -83,23 +84,39 @@ namespace YASDown
                 {
                     accum = accum + "/" + str;
                     thedir = config.sftpRemoteFolder + "/" + accum;
+                    thedir = thedir.Replace("//", "/");
                     Log.Debug("Trying to create directory " + thedir);
-                    client.CreateDirectory(thedir);
+                    try
+                    {
+                        client.CreateDirectory(thedir);
+                    }
+                    catch (SshException) { }
                 }
-                using(FileStream fis = new FileStream(filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                {
-                    client.UploadFile(fis, thedir + "/" + fi.Name, true, null);
-                    Log.Debug("File uploaded successfully!");
-                }
+                FileStream fis = new FileStream(filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                    client.BeginUploadFile(fis, thedir + "/" + fi.Name, true, (fini) => 
+                    {
+                        FileStream ffini = fini.AsyncState as FileStream;
+                        if (ffini != null)
+                            ffini.Close();
+                        if (client != null && client.IsConnected)
+                        {
+                            client.Disconnect();
+                        }
+                        Log.Debug("Upload finished!");
+                        if(Program.frm != null)
+                            Program.frm.SetStatus("Upload finished! / Ready");
+                    }, fis, (pct) => 
+                    {  
+                        if(Program.frm != null)
+                        {
+                            Program.frm.SetStatus("Uploaded " + pct.ToString() + " bytes");
+                        }
+                    });
             }
             catch(Exception aiee)
             {
                 Log.Error("Error: " + aiee.Message);
                 Log.Debug(aiee.StackTrace);
-            }
-            finally
-            {
-                client.Dispose();
             }
         }
     }
