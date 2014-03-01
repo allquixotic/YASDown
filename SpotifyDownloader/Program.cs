@@ -181,6 +181,7 @@ namespace YASDown
             lame.LameSetInSampleRate(staticfmt.sample_rate);
             lame.LameSetNumChannels(staticfmt.channels);
             lame.LameSetBRate(_confo.lameBitrate);
+            Log.Debug("Encoding at " + _confo.lameBitrate + "kbps");
             lame.LameInitParams();
             outStream = outFile.OpenWrite();
 
@@ -324,6 +325,7 @@ namespace YASDown
                 if (delta320 < delta160)
                     br = libspotify.sp_bitrate.BITRATE_320k;
 
+                Log.Debug("Set download bitrate to " + br.ToString());
                 libspotify.sp_session_preferred_bitrate(sess, br);
                 IntPtr splink = libspotify.sp_link_create_from_string(url);
                 if (libspotify.sp_link_type(splink) == libspotify.sp_linktype.SP_LINKTYPE_TRACK)
