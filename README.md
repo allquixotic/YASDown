@@ -65,7 +65,6 @@ I will not provide publicly accessible binary downloads. However, if I know you,
   - Needs testing to make sure the WinForms code works, and probably fixes.
   - Needs testing on 32-bit and 64-bit Linux, and probably fixes.
  - Need to see if I can downgrade the runtime requirement to .NET 4.0 Client Profile for wider compatibility. Probably doable.
- - The guts of the SFTP support is not currently implemented, just stubbed out UI.
  - Program.cs needs major refactoring to move the engine out of the main class and decouple it from the GUI/CLI.
  - Probably need to implement our own mainloop and do all spotify API calls within that thread, to support both CLI and GUI equally well.
  - CLI mode is currently very unlikely to work well (or at all) even on Windows due to the GUI-first design so far.
