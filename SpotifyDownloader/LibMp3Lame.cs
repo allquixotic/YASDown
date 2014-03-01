@@ -32,15 +32,15 @@ namespace YASDown
         }
 
         // const char* CDECL get_lame_version(void);
-        [DllImport("libmp3lame.dll")]
+        [DllImport("libmp3lame.dll",CallingConvention=CallingConvention.Cdecl)]
         public extern static IntPtr get_lame_version();
 
         // lame_global_flags * CDECL lame_init(void);
-        [DllImport("libmp3lame.dll")]
+        [DllImport("libmp3lame.dll",CallingConvention=CallingConvention.Cdecl)]
         public extern static IntPtr lame_init();
 
         // void lame_close(lame_global_flags *);
-        [DllImport("libmp3lame.dll")]
+        [DllImport("libmp3lame.dll",CallingConvention=CallingConvention.Cdecl)]
         public extern static void lame_close(IntPtr lame_global_flags);
 
         /*
@@ -60,39 +60,39 @@ namespace YASDown
         public delegate void LameInfoCallback(string format, params object[] args);
 
         // int CDECL lame_set_errorf(lame_global_flags *, lame_report_function);
-        [DllImport("libmp3lame.dll")]
+        [DllImport("libmp3lame.dll",CallingConvention=CallingConvention.Cdecl)]
         public extern static int lame_set_errorf(IntPtr lame_global_flags, LameInfoCallback func);
 
         // int CDECL lame_set_debugf(lame_global_flags *, lame_report_function);
-        [DllImport("libmp3lame.dll")]
+        [DllImport("libmp3lame.dll",CallingConvention=CallingConvention.Cdecl)]
         public extern static int lame_set_debugf(IntPtr lame_global_flags, LameInfoCallback func);
 
         // int CDECL lame_set_msgf (lame_global_flags *, lame_report_function);
-        [DllImport("libmp3lame.dll")]
+        [DllImport("libmp3lame.dll",CallingConvention=CallingConvention.Cdecl)]
         public extern static int lame_set_msgf(IntPtr lame_global_flags, LameInfoCallback func);
 
         // int CDECL lame_set_brate(lame_global_flags *, int);
-        [DllImport("libmp3lame.dll")]
+        [DllImport("libmp3lame.dll",CallingConvention=CallingConvention.Cdecl)]
         public extern static int lame_set_brate(IntPtr lame_global_flags, int brate);
 
         // int CDECL lame_set_mode(lame_global_flags *, MPEG_mode);
-        [DllImport("libmp3lame.dll")]
+        [DllImport("libmp3lame.dll",CallingConvention=CallingConvention.Cdecl)]
         public extern static int lame_set_mode(IntPtr lame_global_flags, MPEG_mode mode);
 
         // int CDECL lame_set_in_samplerate(lame_global_flags *, int);
-        [DllImport("libmp3lame.dll")]
+        [DllImport("libmp3lame.dll",CallingConvention=CallingConvention.Cdecl)]
         public extern static int lame_set_in_samplerate(IntPtr lame_global_flags, int rateInHz);
 
         // int CDECL lame_set_num_channels(lame_global_flags *, int);
-        [DllImport("libmp3lame.dll")]
+        [DllImport("libmp3lame.dll",CallingConvention=CallingConvention.Cdecl)]
         public extern static int lame_set_num_channels(IntPtr lame_global_flags, int channels);
 
         // int CDECL lame_set_quality(lame_global_flags *, int);
-        [DllImport("libmp3lame.dll")]
+        [DllImport("libmp3lame.dll",CallingConvention=CallingConvention.Cdecl)]
         public extern static int lame_set_quality(IntPtr lame_global_flags, int quality);
 
         // int CDECL lame_init_params(lame_global_flags *);
-        [DllImport("libmp3lame.dll")]
+        [DllImport("libmp3lame.dll",CallingConvention=CallingConvention.Cdecl)]
         public extern static int lame_init_params(IntPtr lame_global_flags);
 
         /*
@@ -135,7 +135,7 @@ namespace YASDown
         // unsigned char* mp3buf, /* pointer to encoded MP3 stream */
         // const int mp3buf_size ); /* number of valid octets in this stream */
 
-        [DllImport("libmp3lame.dll")]
+        [DllImport("libmp3lame.dll",CallingConvention=CallingConvention.Cdecl)]
         public extern static int lame_encode_buffer(IntPtr lame_global_flags,
         short[] buffer_l,
         short[] buffer_r,
@@ -147,14 +147,14 @@ namespace YASDown
         // lame_global_flags * gfp, /* global context handle */
         // unsigned char* mp3buf, /* pointer to encoded MP3 stream */
         // int size); /* number of valid octets in this stream */
-        [DllImport("libmp3lame.dll")]
+        [DllImport("libmp3lame.dll",CallingConvention=CallingConvention.Cdecl)]
         public extern static int lame_encode_flush(IntPtr lame_global_flags,
         IntPtr mp3buf,
         int mp3buf_size);
 
         // size_t CDECL lame_get_lametag_frame(
         // const lame_global_flags *, unsigned char* buffer, size_t size);
-        [DllImport("libmp3lame.dll")]
+        [DllImport("libmp3lame.dll",CallingConvention=CallingConvention.Cdecl)]
         public extern static int lame_get_lametag_frame(IntPtr lame_global_flags, IntPtr buffer, int size);
 
         #endregion

@@ -14,6 +14,11 @@ using TagLib;
 using TagLib.Id3v2;
 using TagLib.Id3v1;
 using libspotifydotnet;
+using Renci.SshNet;
+using Renci.SshNet.Sftp;
+using Renci.SshNet.Security;
+using Renci.SshNet.Common;
+using Renci.SshNet.Compression;
 
 namespace YASDown
 {
@@ -82,6 +87,7 @@ namespace YASDown
         static LibMp3Lame lame = new LibMp3Lame();
         static bool firstDelivery = true;
         static FileStream outStream = null;
+        static AppConfig _confo = null;
 
         [STAThread]
         static void Main(string[] args)
@@ -133,10 +139,10 @@ namespace YASDown
             Log.Debug("Format: " + staticfmt.sample_type);
             Log.Debug("MP3 encoding complete!");
 
-            byte[] mp3Out = new byte[64000];
+            byte[] mymp3Out = new byte[64000];
             int outSize;
-            outSize = lame.LameEncodeFlush(mp3Out);
-            outStream.Write(mp3Out, 0, outSize);
+            outSize = lame.LameEncodeFlush(mymp3Out);
+            outStream.Write(mymp3Out, 0, outSize);
             outStream.Flush();
             outStream.Close();
             Log.Debug("File written to disk! Trying to write tags...");
@@ -148,6 +154,7 @@ namespace YASDown
             Session.Pause();
             Session.UnloadPlayer();
             Log.Debug("Tags written! Finished!");
+            new SftpUploader(_confo).go(outFile.FullName);
         }
 
         static byte[] mp3Out = new byte[10000000];
@@ -201,6 +208,7 @@ namespace YASDown
                 Session.Pause();
                 Session.UnloadPlayer();
                 Log.Debug("Tags written! Finished!");
+                new SftpUploader(_confo).go(outFile.FullName);
                 return;
             }
 
@@ -275,12 +283,12 @@ namespace YASDown
             {
                 IntPtr sess = Session.GetSessionPtr();
                 IntPtr splink = libspotify.sp_link_create_from_string(url);
-                if(libspotify.sp_link_type(splink) == libspotify.sp_linktype.SP_LINKTYPE_TRACK)
+                if (libspotify.sp_link_type(splink) == libspotify.sp_linktype.SP_LINKTYPE_TRACK)
                 {
                     Log.Debug("Starting work on track " + url);
                     IntPtr sptrack = libspotify.sp_link_as_track(splink);
                     IntPtr sptrack2 = libspotify.sp_track_get_playable(sess, sptrack);
-                    if(Session.LoadPlayer(sptrack2) != libspotify.sp_error.OK)
+                    if (Session.LoadPlayer(sptrack2) != libspotify.sp_error.OK)
                     {
                         Log.Error("Unable to load track player for " + url);
                     }
@@ -288,89 +296,24 @@ namespace YASDown
                     {
                         audioStreamComplete = false;
                         firstDelivery = true;
-                        string _artist = Utf8ToString(libspotify.sp_artist_name(libspotify.sp_track_artist(sptrack2, 0)));
-                        string _album = Utf8ToString(libspotify.sp_album_name(libspotify.sp_track_album(sptrack2)));
-                        string _song = Utf8ToString(libspotify.sp_track_name(sptrack2));
+                        string _artist = Utils.Utf8ToString(libspotify.sp_artist_name(libspotify.sp_track_artist(sptrack2, 0)));
+                        string _album = Utils.Utf8ToString(libspotify.sp_album_name(libspotify.sp_track_album(sptrack2)));
+                        string _song = Utils.Utf8ToString(libspotify.sp_track_name(sptrack2));
                         Log.Debug("Artist: " + _artist + "; Album: " + _album + "; Song: " + _song);
                         outFile = new FileInfo(Path.Combine(config.localBaseFolder, _artist, _album, _artist + " - " + _song + ".mp3"));
                         Log.Debug("Making directory " + Path.GetDirectoryName(outFile.FullName));
                         Directory.CreateDirectory(Path.GetDirectoryName(outFile.FullName));
                         Session.Play();
                         Log.Debug("Data is streaming!");
-                        if(outFile.Exists)
+                        if (outFile.Exists)
                             outFile.Delete();
+                        _confo = config;
                     }
                 }
                 else
                 {
                     Log.Error("Error: Invalid link type!");
                 }
-            }
-        }
-
-        public static string Utf8ToString(IntPtr aUtf8)
-        {
-            if (aUtf8 == IntPtr.Zero)
-                return null;
-            int len = 0;
-            while (Marshal.ReadByte(aUtf8, len) != 0)
-                len++;
-            if (len == 0)
-                return "";
-            byte[] array = new byte[len];
-            Marshal.Copy(aUtf8, array, 0, len);
-            return Encoding.UTF8.GetString(array);
-        }
-    }
-
-    public class Log
-    {
-        public static readonly StreamWriter sw = null;
-        public static bool gui = false;
-        
-        static Log()
-        {
-            try
-            {
-                sw = new StreamWriter(new FileStream(Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "log.txt"), FileMode.Create, FileAccess.Write, FileShare.ReadWrite), Encoding.UTF8);
-            }
-            catch(Exception){}
-        }
-
-        public static void Debug(string o1, params object[] o2)
-        {
-            if(sw != null && sw.BaseStream.CanWrite)
-            {
-                sw.WriteLine(o1, o2);
-                sw.Flush();
-            }
-
-            Console.WriteLine(o1, o2);
-        }
-
-        public static void Debug(string o1)
-        {
-            if (sw != null && sw.BaseStream.CanWrite)
-            {
-                sw.WriteLine(o1);
-                sw.Flush();
-            }
-
-            Console.WriteLine(o1);
-            Console.Out.Flush();
-        }
-
-        public static void Error(string o1, params object[] o2)
-        {
-            Debug(o1, o2);
-        }
-
-        public static void Error(string o1)
-        {
-            Debug(o1);
-            if(gui)
-            {
-                MessageBox.Show(o1, "Error");
             }
         }
     }

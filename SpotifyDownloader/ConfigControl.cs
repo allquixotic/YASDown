@@ -102,9 +102,14 @@ namespace YASDown
 
         private void sftpCheckbox_CheckedChanged(object sender, EventArgs e)
         {
-            foreach(Control c in this.Controls.Cast<Control>().Where(x => x.Name.StartsWith("sftp", StringComparison.CurrentCultureIgnoreCase) && x != sftpCheckbox))
+            foreach(Control c in groupBox1.Controls.Cast<Control>().Where((x) => x.Name.StartsWith("sftp")))
             {
-                c.Enabled = sftpCheckbox.Checked;
+                if(c != sftpCheckbox)
+                    c.Enabled = sftpCheckbox.Checked;
+            }
+            if(sftpCheckbox.Enabled && sftpPortBox.Text == "0")
+            {
+                sftpPortBox.Text = "22";
             }
             browseKeyButton.Enabled = sftpCheckbox.Checked;
         }
