@@ -6,6 +6,7 @@ using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 using System.Threading.Tasks;
+using System.ComponentModel;
 
 namespace YASDown
 {
@@ -20,6 +21,10 @@ namespace YASDown
         public string sftpPassword { get; set; }
         public string sftpPrivateKeyPath { get; set; }
         public string sftpRemoteFolder { get; set; }
+        [DefaultValue(160)]
+        public int spotifyBitrate { get; set; }
+        [DefaultValue(192)]
+        public int lameBitrate { get; set; }
 
         [NonSerialized]
         public static readonly string configbin = Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "config.bin");

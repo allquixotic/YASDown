@@ -68,10 +68,7 @@ I will not provide publicly accessible binary downloads. However, if I know you,
  - Program.cs needs major refactoring to move the engine out of the main class and decouple it from the GUI/CLI.
  - Probably need to implement our own mainloop and do all spotify API calls within that thread, to support both CLI and GUI equally well.
  - CLI mode is currently very unlikely to work well (or at all) even on Windows due to the GUI-first design so far.
- - Make an option for configuring Spotify download quality.
- - Make an option for configuring LAME encoding bitrate.
  - Better error handling.
- - Progress bar / status updates to both the CLI and GUI as the song is downloaded.
 
 ###Legal and Licensing
 "This product uses SPOTIFY CORE but is not endorsed, certified or otherwise approved in any way by Spotify. Spotify is the registered trade mark of the Spotify Group."

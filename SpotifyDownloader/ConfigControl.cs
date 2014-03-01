@@ -13,6 +13,9 @@ namespace YASDown
     public partial class ConfigControl : UserControl
     {
         private AppConfig config = null;
+
+        public int[] spotValues = new int[]{ 96, 160, 320};
+
         public ConfigControl(AppConfig conf = null)
         {
             InitializeComponent();
@@ -23,18 +26,34 @@ namespace YASDown
                 config = new AppConfig();
             }
 
+            spotifyBitrate.Items.Clear();
+            spotifyBitrate.Items.Add(96);
+            spotifyBitrate.Items.Add(160);
+            spotifyBitrate.Items.Add(320);
+            lameBitrate.Items.Clear();
+            lameBitrate.Items.Add(96);
+            lameBitrate.Items.Add(128);
+            lameBitrate.Items.Add(160);
+            lameBitrate.Items.Add(192);
+            lameBitrate.Items.Add(256);
+            lameBitrate.Items.Add(320);
+
             Binding binding1 = new Binding("Checked", config, "sftpEnabled");
             Binding binding2 = new Binding("Text", config, "sftpRemoteServer");
             Binding binding3 = new Binding("Text", config, "sftpUsername");
             Binding binding4 = new Binding("Text", config, "sftpPassword");
             Binding binding7 = new Binding("Text", config, "sftpRemoteFolder");
             Binding binding8 = new Binding("Text", config, "sftpPort");
+            Binding binding9 = new Binding("SelectedItem", config, "spotifyBitrate");
+            Binding binding10 = new Binding("SelectedItem", config, "lameBitrate");
             sftpCheckbox.DataBindings.Add(binding1);
             sftpPasswordBox.DataBindings.Add(binding4);
             sftpPortBox.DataBindings.Add(binding8);
             sftpRemoteFolderBox.DataBindings.Add(binding7);
             sftpServerBox.DataBindings.Add(binding2);
             sftpUsernameBox.DataBindings.Add(binding3);
+            spotifyBitrate.DataBindings.Add(binding9);
+            lameBitrate.DataBindings.Add(binding10);
             folderBrowse.SelectedPath = (config.localBaseFolder != null ? config.localBaseFolder : "");
             privateKeyBrowse.FileName = (config.sftpPrivateKeyPath != null ? config.sftpPrivateKeyPath : "");
         }

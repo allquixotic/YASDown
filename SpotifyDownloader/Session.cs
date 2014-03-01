@@ -330,13 +330,6 @@ namespace YASDown
 
             if (OnNotifyMainThread != null)
                 OnNotifyMainThread(_sessionPtr);
-            if (Program.frm != null)
-            {
-                Program.frm.BeginInvoke((Action)(() =>
-                {
-                    libspotify.sp_session_process_events(Session.GetSessionPtr(), out timeout);
-                }));
-            }
         }
 
         private static void offline_status_updated(IntPtr sessionPtr) {
