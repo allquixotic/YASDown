@@ -37,7 +37,7 @@
             // 
             this.urlBox.Location = new System.Drawing.Point(38, 3);
             this.urlBox.Name = "urlBox";
-            this.urlBox.Size = new System.Drawing.Size(100, 20);
+            this.urlBox.Size = new System.Drawing.Size(242, 20);
             this.urlBox.TabIndex = 0;
             // 
             // label1
@@ -68,7 +68,7 @@
             this.Controls.Add(this.urlBox);
             this.DoubleBuffered = true;
             this.Name = "MainControl";
-            this.Size = new System.Drawing.Size(150, 64);
+            this.Size = new System.Drawing.Size(283, 64);
             this.ResumeLayout(false);
             this.PerformLayout();
 

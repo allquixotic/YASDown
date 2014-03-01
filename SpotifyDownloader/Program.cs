@@ -303,9 +303,9 @@ namespace YASDown
                     {
                         audioStreamComplete = false;
                         firstDelivery = true;
-                        string _artist = Utils.Utf8ToString(libspotify.sp_artist_name(libspotify.sp_track_artist(sptrack2, 0)));
-                        string _album = Utils.Utf8ToString(libspotify.sp_album_name(libspotify.sp_track_album(sptrack2)));
-                        string _song = Utils.Utf8ToString(libspotify.sp_track_name(sptrack2));
+                        _artist = Utils.Utf8ToString(libspotify.sp_artist_name(libspotify.sp_track_artist(sptrack2, 0)));
+                        _album = Utils.Utf8ToString(libspotify.sp_album_name(libspotify.sp_track_album(sptrack2)));
+                        _song = Utils.Utf8ToString(libspotify.sp_track_name(sptrack2));
                         Log.Debug("Artist: " + _artist + "; Album: " + _album + "; Song: " + _song);
                         outFile = new FileInfo(Path.Combine(config.localBaseFolder, _artist, _album, _artist + " - " + _song + ".mp3"));
                         if(outFile.Exists)
