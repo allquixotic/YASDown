@@ -46,6 +46,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>lib\libspotifydotnet.dll</HintPath>
     </Reference>
+    <Reference Include="Nito.Async">
+      <HintPath>lib\Nito.Async.dll</HintPath>
+    </Reference>
     <Reference Include="Renci.SshNet, Version=2013.4.7.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>lib\Renci.SshNet.dll</HintPath>
@@ -85,6 +88,7 @@
     <Compile Include="Form1.Designer.cs">
       <DependentUpon>Form1.cs</DependentUpon>
     </Compile>
+    <Compile Include="Functions.cs" />
     <Compile Include="LibMp3Lame.cs" />
     <Compile Include="Log.cs" />
     <Compile Include="LoginControl.cs">

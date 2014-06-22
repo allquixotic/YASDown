@@ -19,7 +19,14 @@ namespace YASDown
 
         private void button1_Click(object sender, EventArgs e)
         {
-            if(Session.Login(usernameBox.Text, passwordBox.Text))
+            bool? b = null;
+            string username = usernameBox.Text, password = passwordBox.Text;
+            Program.nito.DoSynchronously(() =>
+            {
+                b = Session.Login(username, password);
+            });
+
+            if(b == true)
             {
                 ((Form1)Parent.Parent).LoadMain();
             }

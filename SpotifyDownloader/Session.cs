@@ -85,6 +85,7 @@ namespace YASDown
         public static event Action<libspotify.sp_audioformat, byte[], int> OnAudioDataArrived;
         public static event Action<object> OnAudioStreamComplete;
         public static int timeout = 0;
+        public static object Monitor = null;
 
         public static IntPtr GetSessionPtr() {
 
@@ -199,7 +200,7 @@ namespace YASDown
 
             libspotify.sp_session_config config = new libspotify.sp_session_config();
             config.api_version = libspotify.SPOTIFY_API_VERSION;
-            config.user_agent = "Smcnamara";
+            config.user_agent = "spewtify";
             config.application_key_size = appkey.Length;
             config.application_key = Marshal.AllocHGlobal(appkey.Length);
 

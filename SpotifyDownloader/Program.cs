@@ -20,6 +20,7 @@ using Renci.SshNet.Sftp;
 using Renci.SshNet.Security;
 using Renci.SshNet.Common;
 using Renci.SshNet.Compression;
+using Nito.Async;
 
 namespace YASDown
 {
@@ -84,6 +85,8 @@ namespace YASDown
     static class Program
     {
         public static Form1 frm = null;
+        public static readonly ActionThread nito = new ActionThread();
+        public static Nito.Async.Timer timer = null;
         public static bool audioStreamComplete = false;
         public static MemoryStream audioBuf = new MemoryStream();
         public static libspotify.sp_audioformat staticfmt;
@@ -97,80 +100,91 @@ namespace YASDown
         static DateTime when = DateTime.Now;
         static MemoryStream buf = new MemoryStream(10000000);
         static byte[] mp3Out = new byte[100000000];
-        static readonly System.Timers.Timer timer = new System.Timers.Timer();
 
         [STAThread]
         static void Main(string[] args)
         {
-            //timer.AutoReset = true;
-            //timer.Elapsed += timer_Elapsed;
-            //timer.Interval = 2000;
-            //timer.Enabled = true;
-            //timer.Start();
-            Session.OnAudioDataArrived += Session_OnAudioDataArrived;
-            Session.OnAudioStreamComplete += Session_OnAudioStreamComplete;
-            Session.OnNotifyMainThread += Session_OnNotifyMainThread;
-            try
+            nito.Start();
+            nito.DoSynchronously(() =>
             {
-                Session.appkey = System.IO.File.ReadAllBytes(Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "spotify_appkey.key"));
-            }
-            catch{}
-
-            bool gui = (args == null || args.Length == 0);
-            Log.gui = gui;
-
-            if(Session.appkey == null || Session.appkey.Length == 0)
-            {
-                Log.Error("Error: Can't find app key file spotify_appkey.key!");
-            }
-            else
-            {
-                lame.LameInit();
-                if (gui)
+                timer = new Nito.Async.Timer();
+                timer.AutoReset = false;
+                timer.Elapsed += timer_Elapsed;
+                Session.OnAudioDataArrived += Session_OnAudioDataArrived;
+                Session.OnAudioStreamComplete += Session_OnAudioStreamComplete;
+                Session.OnNotifyMainThread += Session_OnNotifyMainThread;
+                try
                 {
-                    Application.EnableVisualStyles();
-                    Application.SetCompatibleTextRenderingDefault(false);
-                    frm = new Form1(Session.Login());
-                    Application.Idle += Application_Idle;
-                    Application.Run(frm);
+                    Session.appkey = System.IO.File.ReadAllBytes(Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "spotify_appkey.key"));
+                }
+                catch { }
+
+                bool gui = (args == null || args.Length == 0);
+                Log.gui = gui;
+
+                if (Session.appkey == null || Session.appkey.Length == 0)
+                {
+                    Log.Error("Error: Can't find app key file spotify_appkey.key!");
                 }
                 else
                 {
-                    DoConsole(args);
+
+                    lame.LameInit();
+                    if (gui)
+                    {
+                        Application.EnableVisualStyles();
+                        Application.SetCompatibleTextRenderingDefault(false);
+                        frm = new Form1(Session.Login());
+                    }
+                    else
+                    {
+                        DoConsole(args);
+                    }
                 }
-            }
+            });
+            if (Log.gui)
+                Application.Run(frm);
         }
 
-        static void timer_Elapsed(object sender, ElapsedEventArgs e)
+        static void timer_Elapsed()
         {
+            Log.Debug("Timer fired");
             int timeout = 0;
-            if(Session.GetSessionPtr() != null)
+            if (Session.GetSessionPtr() != null)
             {
                 do
                 {
                     libspotify.sp_session_process_events(Session.GetSessionPtr(), out timeout);
                 } while (timeout == 0);
-                timer.Interval = (timeout > 0 ? timeout : 1000);
+                timer.SetSingleShot(TimeSpan.FromMilliseconds(timeout > 0 ? timeout : 1000));
+                timer.Enabled = true;
             }
         }
 
-        //Some kind of extremely tight infinite loop happens if this calls sp_session_process_events.
         static void Session_OnNotifyMainThread(IntPtr obj)
         {
-            //Log.Debug("Notify called!");
+            nito.Do(() =>
+                {
+                    Log.Debug("Notify called!");
+                    timer_Elapsed();
+                });
         }
 
         static void Session_OnAudioStreamComplete(object obj)
         {
-            if (audioStreamComplete)
-            {
-                Log.Debug("OnAudioStreamComplete AGAIN; deja vu!");
-                return;
-            }
-            audioStreamComplete = true;
-            Log.Debug("OnAudioStreamComplete!");
+            nito.Do(() =>
+                {
+                    if (audioStreamComplete)
+                    {
+                        Log.Debug("OnAudioStreamComplete AGAIN; deja vu!");
+                        return;
+                    }
+                    audioStreamComplete = true;
+                    Log.Debug("OnAudioStreamComplete!");
 
-            FinishEncode();
+                    FinishEncode();
+                });
+
         }
 
         static void FinishEncode()
@@ -214,7 +228,9 @@ namespace YASDown
             tf.Save();
             Log.Debug("Tags written! Finished!");
             if (frm != null)
-                frm.SetStatus("Download finished");
+            {
+                frm.BeginInvoke((Delegate) new MethodInvoker(() => frm.SetStatus("Download finished")));
+            }
             new SftpUploader(_confo).go(outFile.FullName);
         }
 
@@ -223,7 +239,7 @@ namespace YASDown
             if (audioStreamComplete)
                 return;
 
-            if(num_frame == 22050 || num_frame > 44100 || num_frame == 0)
+            if (num_frame == 22050 || num_frame > 44100 || num_frame == 0)
             {
                 //This isn't normal. It's trying to write some kind of silence at the end of the file.
                 audioStreamComplete = true;
@@ -234,138 +250,133 @@ namespace YASDown
 
             buf.Write(obj, 0, obj.Length);
             if (frm != null)
-                frm.SetStatus("Fetched " + buf.Length + " bytes");
-        }
-
-        static void Application_Idle(object sender, EventArgs e)
-        {
-            int timeout = 0;
-            if (Session.GetSessionPtr() != null)
             {
-                do
-                {
-                    libspotify.sp_session_process_events(Session.GetSessionPtr(), out timeout);
-                } while (timeout == 0);
-                timer.Interval = (timeout > 0 ? timeout : 1000);
+                frm.BeginInvoke((Delegate)new MethodInvoker(() => frm.SetStatus("Fetched " + buf.Length + " bytes")));
             }
         }
 
         static void DoConsole(string[] args)
         {
-            var options = new Options();
-            if (CommandLine.Parser.Default.ParseArguments(args, options))
+            nito.Do(() =>
             {
-                if(options.URL == null || options.URL.Length == 0)
+                var options = new Options();
+                if (CommandLine.Parser.Default.ParseArguments(args, options))
                 {
-                    Log.Error("Error: No URL specified");
-                    return;
+                    if (options.URL == null || options.URL.Length == 0)
+                    {
+                        Log.Error("Error: No URL specified");
+                        return;
+                    }
+
+                    if (!Session.Login(options.Username, options.Password))
+                    {
+                        Log.Error("Error: Bad credentials");
+                        return;
+                    }
+
+                    AppConfig config = AppConfig.Load();
+                    if (config == null)
+                    {
+                        config = new AppConfig();
+                    }
+
+                    if (options.UseSftp != null)
+                        config.sftpEnabled = options.UseSftp.Value;
+
+                    if (options.LocalFolder != null)
+                        config.localBaseFolder = options.LocalFolder;
+
+                    if (options.SftpUsername != null)
+                        config.sftpUsername = options.SftpUsername;
+
+                    if (options.SftpPassword != null)
+                        config.sftpPassword = options.SftpPassword;
+
+                    if (options.SftpPort != null)
+                        config.sftpPort = options.SftpPort.Value;
+
+                    if (options.SftpServer != null)
+                        config.sftpRemoteServer = options.SftpServer;
+
+                    if (options.SftpKey != null)
+                        config.sftpPrivateKeyPath = options.SftpKey;
+
+                    if (options.SftpPath != null)
+                        config.sftpRemoteServer = options.SftpPath;
+
+                    config.spotifyBitrate = options.SpotifyBitrate;
+                    config.lameBitrate = options.LameBitrate;
+
+                    if (options.Save == true)
+                        config.Save();
+
+                    Download(options.URL, config);
                 }
-
-                if(!Session.Login(options.Username, options.Password))
-                {
-                    Log.Error("Error: Bad credentials");
-                    return;
-                }
-
-                AppConfig config = AppConfig.Load();
-                if(config == null)
-                {
-                    config = new AppConfig();
-                }
-
-                if(options.UseSftp != null)
-                    config.sftpEnabled = options.UseSftp.Value;
-
-                if (options.LocalFolder != null)
-                    config.localBaseFolder = options.LocalFolder;
-
-                if (options.SftpUsername != null)
-                    config.sftpUsername = options.SftpUsername;
-
-                if (options.SftpPassword != null)
-                    config.sftpPassword = options.SftpPassword;
-
-                if (options.SftpPort != null)
-                    config.sftpPort = options.SftpPort.Value;
-
-                if (options.SftpServer != null)
-                    config.sftpRemoteServer = options.SftpServer;
-
-                if (options.SftpKey != null)
-                    config.sftpPrivateKeyPath = options.SftpKey;
-
-                if (options.SftpPath != null)
-                    config.sftpRemoteServer = options.SftpPath;
-
-                config.spotifyBitrate = options.SpotifyBitrate;
-                config.lameBitrate = options.LameBitrate;
-
-                if (options.Save == true)
-                    config.Save();
-
-                Download(options.URL, config);
-            }
+            });
         }
 
         public static void Download(string url, AppConfig config)
         {
-            _confo = config;
-            if (frm != null)
-                frm.SetStatus("Download in progress...");
-            if (url != null && url.Length > 0)
+            nito.Do(() =>
             {
-                IntPtr sess = Session.GetSessionPtr();
-                libspotify.sp_bitrate br;
-                int delta96 = Math.Abs(config.spotifyBitrate - 96),
-                    delta160 = Math.Abs(config.spotifyBitrate - 160),
-                    delta320 = Math.Abs(config.spotifyBitrate - 320);
-                br = libspotify.sp_bitrate.BITRATE_96k;
-                if (delta160 < delta96)
-                    br = libspotify.sp_bitrate.BITRATE_160k;
-                if (delta320 < delta160)
-                    br = libspotify.sp_bitrate.BITRATE_320k;
-
-                Log.Debug("Set download bitrate to " + br.ToString());
-                libspotify.sp_session_preferred_bitrate(sess, br);
-                IntPtr splink = libspotify.sp_link_create_from_string(url);
-                if (libspotify.sp_link_type(splink) == libspotify.sp_linktype.SP_LINKTYPE_TRACK)
+                _confo = config;
+                if (frm != null)
+                    frm.SetStatus("Download in progress...");
+                if (url != null && url.Length > 0)
                 {
-                    Log.Debug("Starting work on track " + url);
-                    IntPtr sptrack = libspotify.sp_link_as_track(splink);
-                    IntPtr sptrack2 = libspotify.sp_track_get_playable(sess, sptrack);
-                    if (Session.LoadPlayer(sptrack2) != libspotify.sp_error.OK)
+                    IntPtr sess = Session.GetSessionPtr();
+                    libspotify.sp_bitrate br;
+                    int delta96 = Math.Abs(config.spotifyBitrate - 96),
+                        delta160 = Math.Abs(config.spotifyBitrate - 160),
+                        delta320 = Math.Abs(config.spotifyBitrate - 320);
+                    br = libspotify.sp_bitrate.BITRATE_96k;
+                    if (delta160 < delta96)
+                        br = libspotify.sp_bitrate.BITRATE_160k;
+                    if (delta320 < delta160)
+                        br = libspotify.sp_bitrate.BITRATE_320k;
+
+                    Log.Debug("Set download bitrate to " + br.ToString());
+                    libspotify.sp_session_preferred_bitrate(sess, br);
+                    IntPtr splink = Functions.StringToLinkPtr(url);
+                    if (libspotify.sp_link_type(splink) == libspotify.sp_linktype.SP_LINKTYPE_TRACK)
                     {
-                        Log.Error("Unable to load track player for " + url);
-                    }
-                    else
-                    {
-                        audioStreamComplete = false;
-                        _artist = Utils.Utf8ToString(libspotify.sp_artist_name(libspotify.sp_track_artist(sptrack2, 0))).Replace(":", "");
-                        _album = Utils.Utf8ToString(libspotify.sp_album_name(libspotify.sp_track_album(sptrack2))).Replace(":", "");
-                        _song = Utils.Utf8ToString(libspotify.sp_track_name(sptrack2)).Replace(":", "");
-                        Log.Debug("Artist: " + _artist + "; Album: " + _album + "; Song: " + _song);
-                        outFile = new FileInfo(Path.Combine(config.localBaseFolder, _artist, _album, _artist + " - " + _song + ".mp3"));
-                        if(outFile.Exists)
+                        Log.Debug("Starting work on track " + url);
+                        IntPtr sptrack = libspotify.sp_link_as_track(splink);
+                        IntPtr sptrack2 = libspotify.sp_track_get_playable(sess, sptrack);
+                        if (Session.LoadPlayer(sptrack2) != libspotify.sp_error.OK)
                         {
-                            new SftpUploader(_confo).go(outFile.FullName);
+                            Log.Error("Unable to load track player for " + url);
                         }
                         else
                         {
-                            Log.Debug("Making directory " + Path.GetDirectoryName(outFile.FullName));
-                            Directory.CreateDirectory(Path.GetDirectoryName(outFile.FullName));
-                            libspotify.sp_session_player_prefetch(Session.GetSessionPtr(), sptrack2);
-                            Session.Play();
-                            Log.Debug("Data is streaming!");
-                            //if (outFile.Exists)
-                            //    outFile.Delete();
+                            audioStreamComplete = false;
+                            _artist = Utils.Utf8ToString(libspotify.sp_artist_name(libspotify.sp_track_artist(sptrack2, 0))).Replace(":", "");
+                            _album = Utils.Utf8ToString(libspotify.sp_album_name(libspotify.sp_track_album(sptrack2))).Replace(":", "");
+                            _song = Utils.Utf8ToString(libspotify.sp_track_name(sptrack2)).Replace(":", "");
+                            Log.Debug("Artist: " + _artist + "; Album: " + _album + "; Song: " + _song);
+                            outFile = new FileInfo(Path.Combine(config.localBaseFolder, _artist, _album, _artist + " - " + _song + ".mp3"));
+                            if(outFile.Exists)
+                            {
+                                new SftpUploader(_confo).go(outFile.FullName);
+                            }
+                            else
+                            {
+                                Log.Debug("Making directory " + Path.GetDirectoryName(outFile.FullName));
+                                Directory.CreateDirectory(Path.GetDirectoryName(outFile.FullName));
+                                libspotify.sp_session_player_prefetch(Session.GetSessionPtr(), sptrack2);
+                                Session.Play();
+                                Log.Debug("Data is streaming!");
+                                //if (outFile.Exists)
+                                //    outFile.Delete();
+                            }
                         }
                     }
+                    else
+                    {
+                        Log.Error("Error: Invalid link type!");
+                    }
                 }
-                else
-                {
-                    Log.Error("Error: Invalid link type!");
-                }
-            }
+            });
         }
     }
 }

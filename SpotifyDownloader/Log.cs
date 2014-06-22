@@ -27,8 +27,11 @@ namespace YASDown
         {
             if (sw != null && sw.BaseStream.CanWrite)
             {
-                sw.WriteLine(o1, o2);
-                sw.Flush();
+                lock(sw)
+                {
+                    sw.WriteLine(o1, o2);
+                    sw.Flush();
+                }
             }
 
             Console.WriteLine(o1, o2);
@@ -38,8 +41,11 @@ namespace YASDown
         {
             if (sw != null && sw.BaseStream.CanWrite)
             {
-                sw.WriteLine(o1);
-                sw.Flush();
+                lock (sw)
+                {
+                    sw.WriteLine(o1);
+                    sw.Flush();
+                }
             }
 
             Console.WriteLine(o1);
@@ -56,7 +62,7 @@ namespace YASDown
             Debug(o1);
             if (gui)
             {
-                MessageBox.Show(o1, "Error");
+                Program.frm.BeginInvoke((Delegate) new MethodInvoker(() => MessageBox.Show(o1, "Error")));
             }
         }
     }
