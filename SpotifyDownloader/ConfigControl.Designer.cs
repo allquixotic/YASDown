@@ -45,7 +45,7 @@
             this.sftpPortBox = new System.Windows.Forms.TextBox();
             this.label209 = new System.Windows.Forms.Label();
             this.sftpServerBox = new System.Windows.Forms.TextBox();
-            this.folderBrowse = new System.Windows.Forms.FolderBrowserDialog();
+            this.folderBrowse = new Ookii.Dialogs.VistaFolderBrowserDialog();
             this.privateKeyBrowse = new System.Windows.Forms.OpenFileDialog();
             this.spotifyBitrate = new System.Windows.Forms.ComboBox();
             this.configControlBindingSource = new System.Windows.Forms.BindingSource(this.components);
@@ -307,7 +307,7 @@
         private System.Windows.Forms.TextBox sftpServerBox;
         private System.Windows.Forms.TextBox sftpRemoteFolderBox;
         private System.Windows.Forms.Label label4;
-        private System.Windows.Forms.FolderBrowserDialog folderBrowse;
+        private Ookii.Dialogs.VistaFolderBrowserDialog folderBrowse;
         private System.Windows.Forms.OpenFileDialog privateKeyBrowse;
         private System.Windows.Forms.ComboBox spotifyBitrate;
         private System.Windows.Forms.ComboBox lameBitrate;
